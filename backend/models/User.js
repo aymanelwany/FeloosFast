@@ -25,6 +25,12 @@ const userSchema = new mongoose.Schema({
   },
   mobileNumber: { type: String, required: true },
   address: { type: String },
+  role: { 
+    type: String, 
+    enum: ['merchant', 'account_user'], 
+    required: true 
+  },
+  associatedAccounts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Account' }],
 }, { timestamps: true });
 
 userSchema.pre('save', async function(next) {

@@ -24,41 +24,26 @@ const authMiddleware = (req, res, next) => {
 // Registration
 router.post('/register', async (req, res) => {
   try {
-    const { 
-      username, 
-      email, 
-      password, 
-      firstName, 
-      lastName, 
-      businessName, 
-      businessType, 
-      customerType, 
-      customerId, 
-      mobileNumber, 
-      address 
-    } = req.body;
+    const { username, email, password, firstName, lastName, customerType, customerId, mobileNumber, address } = req.body;
     
+    // Check if user already exists
     let user = await User.findOne({ $or: [{ email }, { username }] });
     if (user) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    if (!['MERCHANT', 'CORPORATE'].includes(customerType)) {
-      return res.status(400).json({ message: 'Invalid customer type' });
-    }
-
+    // Create new user
     user = new User({
       username,
       email,
       password,
       firstName,
       lastName,
-      businessName,
-      businessType,
       customerType,
       customerId,
       mobileNumber,
-      address
+      address,
+      role: 'merchant' // Set default role to 'merchant'
     });
 
     await user.save();
@@ -66,45 +51,7 @@ router.post('/register', async (req, res) => {
     res.status(201).json({ message: 'User registered successfully.' });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Error registering user' });
-  }
-});
-
-// Login
-router.post('/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-
-    const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-
-    res.json({
-      message: 'Logged in successfully',
-      token,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName
-      }
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error logging in' });
+    res.status(500).json({ message: 'Error registering user', error: error.message });
   }
 });
 
